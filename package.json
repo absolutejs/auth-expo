@@ -1,6 +1,6 @@
 {
 	"name": "@absolutejs/auth-expo",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Expo native runtime adapter for @absolutejs/auth",
 	"license": "BSL-1.1",
 	"type": "module",
@@ -34,7 +34,7 @@
 		"check": "bun run typecheck && bun run test && bun run build && npm pack --dry-run"
 	},
 	"dependencies": {
-		"@absolutejs/auth": "^0.75.4"
+		"@absolutejs/auth": "0.75.6"
 	},
 	"peerDependencies": {
 		"expo-linking": "~57.0.8",
