@@ -1,0 +1,65 @@
+{
+	"name": "@absolutejs/auth-expo",
+	"version": "0.0.1",
+	"description": "Expo native runtime adapter for @absolutejs/auth",
+	"license": "BSL-1.1",
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/absolutejs/auth-expo.git"
+	},
+	"homepage": "https://github.com/absolutejs/auth-expo",
+	"bugs": {
+		"url": "https://github.com/absolutejs/auth-expo/issues"
+	},
+	"scripts": {
+		"build": "bun build src/index.ts --outdir dist --target=browser --external @absolutejs/auth --external expo-linking --external expo-secure-store --external expo-web-browser --external react-native && tsc -p tsconfig.build.json",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit",
+		"check": "bun run typecheck && bun run test && bun run build && npm pack --dry-run"
+	},
+	"dependencies": {
+		"@absolutejs/auth": "^0.75.4"
+	},
+	"peerDependencies": {
+		"expo-linking": "~57.0.8",
+		"expo-secure-store": "~57.0.2",
+		"expo-web-browser": "~57.0.2",
+		"react-native": "0.86.x"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.2.9",
+		"expo-linking": "~57.0.8",
+		"expo-secure-store": "~57.0.2",
+		"expo-web-browser": "~57.0.2",
+		"react": "19.2.3",
+		"react-native": "0.86.3",
+		"typescript": "~6.0.3"
+	},
+	"keywords": [
+		"absolutejs",
+		"authentication",
+		"expo",
+		"oauth",
+		"oidc",
+		"pkce"
+	],
+	"publishConfig": {
+		"access": "public"
+	}
+}
