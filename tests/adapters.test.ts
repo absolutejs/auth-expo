@@ -19,8 +19,17 @@ mock.module('expo-secure-store', () => ({
 mock.module('expo-web-browser', () => ({
 	openAuthSessionAsync: async () => ({ type: 'cancel' })
 }));
+mock.module('expo-crypto', () => ({
+	CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+	digest: (algorithm: AlgorithmIdentifier, value: Uint8Array) =>
+		crypto.subtle.digest(algorithm, new Uint8Array(value)),
+	getRandomBytes: (length: number) =>
+		crypto.getRandomValues(new Uint8Array(length))
+}));
 
-const { createAbsoluteExpoAuthAdapters } = await import('../src');
+const { absoluteExpoAuthCrypto, createAbsoluteExpoAuthAdapters } = await import(
+	'../src'
+);
 
 const fixture = () => {
 	const values = new Map<string, string>();
@@ -81,10 +90,41 @@ const fixture = () => {
 };
 
 describe('AbsoluteJS Expo Auth adapters', () => {
+	test('provides native PKCE primitives and verifies JOSE ES256 signatures', async () => {
+		const pair = await crypto.subtle.generateKey(
+			{ name: 'ECDSA', namedCurve: 'P-256' },
+			true,
+			['sign', 'verify']
+		);
+		const jwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+		const data = new TextEncoder().encode('absolutejs-expo-auth');
+		const signature = new Uint8Array(
+			await crypto.subtle.sign(
+				{ hash: 'SHA-256', name: 'ECDSA' },
+				pair.privateKey,
+				data
+			)
+		);
+		expect(absoluteExpoAuthCrypto.randomBytes(32)).toHaveLength(32);
+		expect(await absoluteExpoAuthCrypto.digestSha256(data)).toHaveLength(
+			32
+		);
+		expect(
+			await absoluteExpoAuthCrypto.verifyEs256({ data, jwk, signature })
+		).toBe(true);
+		signature[0] ^= 1;
+		expect(
+			await absoluteExpoAuthCrypto.verifyEs256({ data, jwk, signature })
+		).toBe(false);
+	});
+
 	test('namespaces credentials and uses device-only after-first-unlock storage', async () => {
 		const value = fixture();
 		const { storage } = createAbsoluteExpoAuthAdapters(
-			{ redirectUri: 'product://auth/callback', storagePrefix: 'product.auth' },
+			{
+				redirectUri: 'product://auth/callback',
+				storagePrefix: 'product.auth'
+			},
 			value.dependencies
 		);
 		await storage.set('oidc.refresh', 'secret');
@@ -126,7 +166,9 @@ describe('AbsoluteJS Expo Auth adapters', () => {
 		);
 		expect(
 			links.openExternal('https://issuer.example/authorize')
-		).rejects.toMatchObject({ code: 'aborted' } satisfies Partial<MobileAuthError>);
+		).rejects.toMatchObject({
+			code: 'aborted'
+		} satisfies Partial<MobileAuthError>);
 	});
 
 	test('refreshes only when the app resumes from a non-active state', async () => {

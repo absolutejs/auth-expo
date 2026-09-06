@@ -1,6 +1,6 @@
 {
 	"name": "@absolutejs/auth-expo",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "Expo native runtime adapter for @absolutejs/auth",
 	"license": "BSL-1.1",
 	"type": "module",
@@ -28,13 +28,15 @@
 		"url": "https://github.com/absolutejs/auth-expo/issues"
 	},
 	"scripts": {
-		"build": "bun build src/index.ts --outdir dist --target=browser --external @absolutejs/auth --external expo-linking --external expo-secure-store --external expo-web-browser --external react-native && tsc -p tsconfig.build.json",
+		"build": "bun build src/index.ts --outdir dist --target=browser --external @absolutejs/auth --external @noble/curves --external expo-crypto --external expo-linking --external expo-secure-store --external expo-web-browser --external react-native && tsc -p tsconfig.build.json",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
 		"check": "bun run typecheck && bun run test && bun run build && npm pack --dry-run"
 	},
 	"dependencies": {
-		"@absolutejs/auth": "0.75.6"
+		"@absolutejs/auth": "0.76.2",
+		"@noble/curves": "2.4.0",
+		"expo-crypto": "~57.0.2"
 	},
 	"peerDependencies": {
 		"expo-linking": "~57.0.8",

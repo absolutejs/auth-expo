@@ -2,10 +2,13 @@ import {
 	createMobileAuthClient,
 	MobileAuthError,
 	type MobileAuthClientConfig,
+	type MobileAuthCrypto,
 	type MobileAuthLifecycle,
 	type MobileAuthLinks,
 	type MobileAuthSecureStorage
 } from '@absolutejs/auth/client/mobile';
+import { p256 } from '@noble/curves/nist.js';
+import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
@@ -81,6 +84,51 @@ const normalizeStoragePrefix = (value = 'absolutejs.auth') => {
 	return value;
 };
 
+const decodeBase64Url = (value: string) => {
+	const normalized = value.replaceAll('-', '+').replaceAll('_', '/');
+	const padded = normalized.padEnd(
+		normalized.length + ((4 - (normalized.length % 4)) % 4),
+		'='
+	);
+	const binary = atob(padded);
+
+	return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+export const absoluteExpoAuthCrypto: MobileAuthCrypto = {
+	digestSha256: async (value) =>
+		new Uint8Array(
+			await Crypto.digest(
+				Crypto.CryptoDigestAlgorithm.SHA256,
+				new Uint8Array(value)
+			)
+		),
+	randomBytes: (length) => Crypto.getRandomBytes(length),
+	verifyEs256: async ({ data, jwk, signature }) => {
+		if (
+			jwk.kty !== 'EC' ||
+			jwk.crv !== 'P-256' ||
+			typeof jwk.x !== 'string' ||
+			typeof jwk.y !== 'string'
+		)
+			return false;
+		const x = decodeBase64Url(jwk.x);
+		const y = decodeBase64Url(jwk.y);
+		if (x.length !== 32 || y.length !== 32 || signature.length !== 64)
+			return false;
+		const publicKey = new Uint8Array(65);
+		publicKey[0] = 4;
+		publicKey.set(x, 1);
+		publicKey.set(y, 33);
+
+		return p256.verify(signature, data, publicKey, {
+			format: 'compact',
+			lowS: false,
+			prehash: true
+		});
+	}
+};
+
 const lockTails = new Map<string, Promise<void>>();
 
 const withProcessLock = async <T>(key: string, run: () => Promise<T>) => {
@@ -118,10 +166,7 @@ export const createAbsoluteExpoAuthAdapters = (
 	let lastDelivered: { at: number; url: string } | undefined;
 	const deliver = (url: string) => {
 		const now = Date.now();
-		if (
-			lastDelivered?.url === url &&
-			now - lastDelivered.at < 1_000
-		)
+		if (lastDelivered?.url === url && now - lastDelivered.at < 1_000)
 			return;
 		lastDelivered = { at: now, url };
 		for (const listener of listeners) listener(url);
@@ -134,7 +179,11 @@ export const createAbsoluteExpoAuthAdapters = (
 				const subscription = dependencies.appState.addEventListener(
 					'change',
 					(state) => {
-						if (state === 'active' && previous && previous !== 'active')
+						if (
+							state === 'active' &&
+							previous &&
+							previous !== 'active'
+						)
 							listener();
 						previous = state;
 					}
@@ -158,10 +207,11 @@ export const createAbsoluteExpoAuthAdapters = (
 				};
 			},
 			openExternal: async (url) => {
-				const result = await dependencies.webBrowser.openAuthSessionAsync(
-					url,
-					options.redirectUri
-				);
+				const result =
+					await dependencies.webBrowser.openAuthSessionAsync(
+						url,
+						options.redirectUri
+					);
 				if (result.type === 'success' && result.url) {
 					deliver(result.url);
 
@@ -175,7 +225,8 @@ export const createAbsoluteExpoAuthAdapters = (
 		},
 		storage: {
 			capability: async () => {
-				const available = await dependencies.secureStore.isAvailableAsync();
+				const available =
+					await dependencies.secureStore.isAvailableAsync();
 
 				return available
 					? { available: true }
@@ -219,5 +270,9 @@ export const createAbsoluteExpoAuthClient = (
 		dependencies
 	);
 
-	return createMobileAuthClient({ ...mobileConfig, ...adapters });
+	return createMobileAuthClient({
+		crypto: absoluteExpoAuthCrypto,
+		...mobileConfig,
+		...adapters
+	});
 };
