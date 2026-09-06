@@ -151,6 +151,7 @@ describe('AbsoluteJS Expo Auth adapters', () => {
 			url: 'product://auth/callback?code=one'
 		});
 		await links.openExternal('https://issuer.example/authorize');
+		await Bun.sleep(1_100);
 		value.emitLink('product://auth/callback?code=one');
 		await Promise.resolve();
 		expect(received).toEqual(['product://auth/callback?code=one']);

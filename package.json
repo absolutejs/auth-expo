@@ -1,6 +1,6 @@
 {
 	"name": "@absolutejs/auth-expo",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Expo native runtime adapter for @absolutejs/auth",
 	"license": "BSL-1.1",
 	"type": "module",

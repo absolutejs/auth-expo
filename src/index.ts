@@ -17,6 +17,8 @@ import { AppState } from 'react-native';
 type LinkSubscription = { remove(): void };
 type AppStateSubscription = { remove(): void };
 
+const MAX_DELIVERED_CALLBACKS = 32;
+
 export type AbsoluteExpoAuthDependencies = {
 	appState: {
 		addEventListener(
@@ -163,12 +165,14 @@ export const createAbsoluteExpoAuthAdapters = (
 			dependencies.secureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY
 	};
 	const listeners = new Set<(url: string) => void>();
-	let lastDelivered: { at: number; url: string } | undefined;
+	const deliveredUrls = new Set<string>();
 	const deliver = (url: string) => {
-		const now = Date.now();
-		if (lastDelivered?.url === url && now - lastDelivered.at < 1_000)
-			return;
-		lastDelivered = { at: now, url };
+		if (deliveredUrls.has(url)) return;
+		deliveredUrls.add(url);
+		if (deliveredUrls.size > MAX_DELIVERED_CALLBACKS) {
+			const oldest = deliveredUrls.values().next().value;
+			if (typeof oldest === 'string') deliveredUrls.delete(oldest);
+		}
 		for (const listener of listeners) listener(url);
 	};
 
