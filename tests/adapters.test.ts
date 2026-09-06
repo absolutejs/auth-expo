@@ -172,6 +172,19 @@ describe('AbsoluteJS Expo Auth adapters', () => {
 		} satisfies Partial<MobileAuthError>);
 	});
 
+	test('bounds a native initial-link lookup that never settles', async () => {
+		const value = fixture();
+		value.dependencies.linking.getInitialURL = () => new Promise(() => {});
+		const { links } = createAbsoluteExpoAuthAdapters(
+			{
+				launchUrlTimeoutMs: 1,
+				redirectUri: 'product://auth/callback'
+			},
+			value.dependencies
+		);
+		expect(await links.getLaunchUrl()).toBeNull();
+	});
+
 	test('refreshes only when the app resumes from a non-active state', async () => {
 		const value = fixture();
 		const { lifecycle } = createAbsoluteExpoAuthAdapters(

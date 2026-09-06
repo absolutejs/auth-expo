@@ -59,6 +59,7 @@ export type AbsoluteExpoAuthDependencies = {
 };
 
 export type AbsoluteExpoAuthAdapterOptions = {
+	launchUrlTimeoutMs?: number;
 	redirectUri: string;
 	storagePrefix?: string;
 };
@@ -159,6 +160,11 @@ export const createAbsoluteExpoAuthAdapters = (
 	storage: MobileAuthSecureStorage;
 } => {
 	const prefix = normalizeStoragePrefix(options.storagePrefix);
+	const launchUrlTimeoutMs = options.launchUrlTimeoutMs ?? 2_000;
+	if (!Number.isFinite(launchUrlTimeoutMs) || launchUrlTimeoutMs < 0)
+		throw new TypeError(
+			'Expo Auth launchUrlTimeoutMs must be a non-negative finite number.'
+		);
 	const keyFor = (key: string) => `${prefix}.${key}`;
 	const secureStoreOptions = {
 		keychainAccessible:
@@ -197,7 +203,19 @@ export const createAbsoluteExpoAuthAdapters = (
 			}
 		},
 		links: {
-			getLaunchUrl: () => dependencies.linking.getInitialURL(),
+			getLaunchUrl: async () => {
+				let timer: ReturnType<typeof setTimeout> | undefined;
+				try {
+					return await Promise.race([
+						dependencies.linking.getInitialURL(),
+						new Promise<null>((resolve) => {
+							timer = setTimeout(resolve, launchUrlTimeoutMs, null);
+						})
+					]);
+				} finally {
+					if (timer !== undefined) clearTimeout(timer);
+				}
+			},
 			onOpen: async (listener) => {
 				listeners.add(listener);
 				const subscription = dependencies.linking.addEventListener(
