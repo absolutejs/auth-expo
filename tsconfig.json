@@ -1,14 +1,24 @@
 {
 	"compilerOptions": {
 		"allowImportingTsExtensions": false,
-		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"lib": [
+			"ES2023",
+			"DOM",
+			"DOM.Iterable"
+		],
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"noEmit": true,
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ES2022",
-		"types": ["bun"]
+		"types": [
+			"bun"
+		]
 	},
-	"include": ["src", "tests"]
+	"include": [
+		"src",
+		"tests",
+		"changelog/**/*"
+	]
 }
