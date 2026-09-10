@@ -34,7 +34,8 @@
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
 		"check": "bun run typecheck && bun run test && bun run build && npm pack --dry-run",
-		"check:package": "absolute-changelog check"
+		"check:package": "absolute-changelog check",
+		"prepublishOnly": "absolute-changelog check"
 	},
 	"dependencies": {
 		"@absolutejs/auth": "0.76.3",
@@ -48,7 +49,7 @@
 		"react-native": "0.86.x"
 	},
 	"devDependencies": {
-		"@absolutejs/changelog": "^0.1.2",
+		"@absolutejs/changelog": "^0.2.0",
 		"@types/bun": "^1.2.9",
 		"expo-linking": "~57.0.8",
 		"expo-secure-store": "~57.0.2",
