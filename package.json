@@ -49,7 +49,7 @@
 		"react-native": "0.86.x"
 	},
 	"devDependencies": {
-		"@absolutejs/changelog": "^0.2.0",
+		"@absolutejs/changelog": "^0.4.0",
 		"@types/bun": "^1.2.9",
 		"expo-linking": "~57.0.8",
 		"expo-secure-store": "~57.0.2",
